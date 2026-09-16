@@ -1,314 +1,1942 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Cadastro de Drenagem — Consulta</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Consulta de Drenagem — Supabase</title>
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
 <style>
-:root{--orange:#e87516;--orange2:#f59b45;--orange3:#fff1e3;--dark:#3a2112;--line:#eadfd5;--bg:#fffaf6;--white:#fff;--muted:#806f62}
-*{box-sizing:border-box}body{margin:0;font-family:Montserrat,Arial,sans-serif;background:var(--bg);color:var(--dark)}
-header{background:linear-gradient(135deg,#c9570c,#f18b2d);color:#fff;padding:26px 30px}
-header h1{margin:0;font-size:26px;font-weight:800}header p{margin:7px 0 0;opacity:.9}
-.toolbar{padding:16px 22px;background:#fff;display:flex;gap:9px;flex-wrap:wrap;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10}
-input,select,button{font:500 13px Montserrat,Arial;padding:11px 12px;border:1px solid #ddcfc3;border-radius:9px;background:#fff;color:var(--dark)}
-input{min-width:300px}button{background:var(--orange);border-color:var(--orange);color:#fff;font-weight:700;cursor:pointer}
-button:hover{background:#cf5e09}.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;padding:18px 22px}
-.stat{background:#fff;border:1px solid var(--line);border-radius:13px;padding:16px;box-shadow:0 3px 12px #6d371015}
-.stat b{font-size:25px;font-weight:800;color:var(--orange);display:block}.stat span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
-.content{padding:0 22px 22px}.panel{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 3px 12px #6d371015;overflow:hidden}
-.section-title{padding:17px 19px;border-bottom:1px solid var(--line);font-weight:800;font-size:16px}
-.summary{padding:18px}.summary h3{margin:0 0 10px;font-size:14px;color:var(--orange)}
-table{width:100%;border-collapse:collapse}td{padding:8px 7px;border-bottom:1px solid #f0e7df;font-size:12px}td:last-child{text-align:right;font-weight:800}
-.badges{display:flex;flex-wrap:wrap;gap:6px}.badge{padding:7px 9px;background:var(--orange3);border:1px solid #f5d2b2;border-radius:20px;font-size:11px}
-.cards{padding:18px;display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:12px}
-.card{border:1px solid var(--line);border-radius:13px;padding:15px;background:linear-gradient(180deg,#fff,#fffaf7);position:relative}
-.card:hover{box-shadow:0 6px 20px #6d37101a;transform:translateY(-1px)}
-.card-head{display:flex;justify-content:space-between;gap:10px;align-items:start;margin-bottom:12px}
-.card h3{margin:0;font-size:14px;font-weight:800}.type{background:var(--orange);color:#fff;padding:5px 8px;border-radius:20px;font-size:10px;font-weight:700;white-space:nowrap}
-.row{display:grid;grid-template-columns:105px 1fr;gap:7px;padding:5px 0;border-bottom:1px solid #f3ebe4;font-size:11px}.row b{color:#8a7668}.row:last-child{border:0}
-.coords{font-family:monospace;font-size:10px;color:#a35312}.pos{display:inline-block;padding:4px 7px;background:#fff0df;border-radius:6px;color:#a84f0b;font-weight:700}
-.map-panel{margin-top:18px}.map-wrap{padding:18px;background:#fff}
-#map{width:100%;height:480px;border:1px solid var(--line);border-radius:12px;background:#fff7ef;display:block}
-.map-note{margin-top:9px;font-size:11px;color:var(--muted)}
-.marker{cursor:pointer}.street-label{font-size:11px;font-weight:700;fill:#70401f}
-@media(max-width:900px){.stats{grid-template-columns:repeat(2,1fr)}input{min-width:220px}.cards{grid-template-columns:1fr}}
+:root{
+  --orange:#e87516;
+  --orange-dark:#c9570c;
+  --orange-light:#fff1e3;
+  --orange-border:#f2c9a7;
+  --dark:#3a2112;
+  --muted:#806f62;
+  --line:#eadfd5;
+  --bg:#fffaf6;
+  --white:#fff;
+  --green:#1f7a3f;
+  --green-dark:#176332;
+  --danger:#b42318;
+}
 
-#map{position:relative;width:100%;height:560px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#eee;cursor:grab;user-select:none}
-#map.dragging{cursor:grabbing}
-#mapTiles,#mapMarkers{position:absolute;inset:0;overflow:hidden}
-#mapTiles{z-index:1;background:#eee}
-#mapMarkers{z-index:2;pointer-events:none}
-.map-tile{position:absolute;width:256px;height:256px;display:block;pointer-events:none}
-.map-marker{position:absolute;width:18px;height:18px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 7px #0007;transform:translate(-50%,-50%);pointer-events:auto;cursor:pointer}
-.map-marker:hover{transform:translate(-50%,-50%) scale(1.25);z-index:20}
-.map-marker::after{content:"";position:absolute;inset:-7px;border-radius:50%;border:2px solid currentColor;opacity:.18}
-.map-popup{position:absolute;z-index:50;min-width:240px;max-width:320px;background:#fff;border:1px solid #d9c6b7;border-radius:10px;padding:10px 12px;box-shadow:0 8px 25px #0003;font:500 11px Montserrat,Arial;color:var(--dark);pointer-events:auto}
-.map-popup b{display:block;font-size:12px;margin-bottom:4px}
-.map-popup .close{position:absolute;right:7px;top:4px;border:0;background:none;color:#7b6a5d;font-size:18px;padding:0;cursor:pointer}.gps-btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;margin-top:8px;padding:8px 10px;border-radius:8px;background:#1f7a3f;border:1px solid #1f7a3f;color:#fff;font:700 10px Montserrat,Arial;cursor:pointer;text-decoration:none}.gps-btn:hover{background:#176332;border-color:#176332}.gps-btn.disabled{background:#aaa;border-color:#aaa;cursor:not-allowed}
-#mapZoom{position:absolute;right:12px;top:12px;z-index:60;display:flex;flex-direction:column;gap:5px}
-#mapZoom button{width:36px;height:36px;padding:0;border-radius:8px;background:#fff;color:var(--dark);border:1px solid #d9c6b7;box-shadow:0 2px 7px #0002;font-size:20px;line-height:1}
-#mapZoom button:hover{background:#fff3e8}
-#mapStatus{position:absolute;left:12px;bottom:12px;z-index:60;background:#fff;opacity:.94;border:1px solid #d9c6b7;border-radius:8px;padding:7px 10px;font-size:10px;color:#6d5c50;box-shadow:0 2px 7px #0002}
-.map-compass{position:absolute;left:12px;top:12px;z-index:60;background:#fff;opacity:.94;border:1px solid #d9c6b7;border-radius:8px;padding:8px 10px;font-size:11px;font-weight:800;color:#9b4c0d;box-shadow:0 2px 7px #0002}
-</style></head>
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  font-family:Montserrat,Arial,sans-serif;
+  background:var(--bg);
+  color:var(--dark);
+}
+
+header{
+  background:linear-gradient(135deg,var(--orange-dark),#f18b2d);
+  color:#fff;
+  padding:28px 30px;
+}
+
+header h1{
+  margin:0;
+  font-size:27px;
+  font-weight:800;
+}
+
+header p{
+  margin:7px 0 0;
+  font-size:13px;
+  opacity:.94;
+}
+
+.toolbar{
+  padding:16px 22px;
+  background:#fff;
+  display:flex;
+  gap:9px;
+  flex-wrap:wrap;
+  border-bottom:1px solid var(--line);
+  position:sticky;
+  top:0;
+  z-index:20;
+  box-shadow:0 2px 10px #6d37100d;
+}
+
+input,select,button{
+  font:500 13px Montserrat,Arial,sans-serif;
+  padding:11px 12px;
+  border:1px solid #ddcfc3;
+  border-radius:9px;
+  background:#fff;
+  color:var(--dark);
+}
+
+input{
+  min-width:330px;
+  flex:1 1 330px;
+}
+
+select{
+  min-width:160px;
+}
+
+button{
+  background:var(--orange);
+  border-color:var(--orange);
+  color:#fff;
+  font-weight:700;
+  cursor:pointer;
+}
+
+button:hover{
+  background:var(--orange-dark);
+  border-color:var(--orange-dark);
+}
+
+.stats{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:12px;
+  padding:18px 22px;
+}
+
+.stat{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:13px;
+  padding:16px;
+  box-shadow:0 3px 12px #6d371015;
+}
+
+.stat b{
+  font-size:25px;
+  font-weight:800;
+  color:var(--orange);
+  display:block;
+}
+
+.stat span{
+  font-size:11px;
+  color:var(--muted);
+  text-transform:uppercase;
+  letter-spacing:.4px;
+}
+
+.content{
+  padding:0 22px 28px;
+}
+
+.panel{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:14px;
+  box-shadow:0 3px 12px #6d371015;
+  overflow:hidden;
+}
+
+.section-title{
+  padding:17px 19px;
+  border-bottom:1px solid var(--line);
+  font-weight:800;
+  font-size:16px;
+}
+
+.summary{
+  padding:18px;
+}
+
+.summary h3{
+  margin:0 0 10px;
+  font-size:14px;
+  color:var(--orange);
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+}
+
+td{
+  padding:8px 7px;
+  border-bottom:1px solid #f0e7df;
+  font-size:12px;
+}
+
+td:last-child{
+  text-align:right;
+  font-weight:800;
+}
+
+.badges{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+}
+
+.badge{
+  padding:7px 9px;
+  background:var(--orange-light);
+  border:1px solid var(--orange-border);
+  border-radius:20px;
+  font-size:11px;
+}
+
+.cards{
+  padding:18px;
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(340px,1fr));
+  gap:14px;
+}
+
+.card{
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:16px;
+  background:linear-gradient(180deg,#fff,#fffaf7);
+  position:relative;
+  transition:.15s ease;
+}
+
+.card:hover{
+  box-shadow:0 7px 22px #6d37101a;
+  transform:translateY(-1px);
+}
+
+.card-head{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  align-items:flex-start;
+  margin-bottom:13px;
+}
+
+.card h3{
+  margin:0;
+  font-size:14px;
+  line-height:1.4;
+  font-weight:800;
+}
+
+.type{
+  background:var(--orange);
+  color:#fff;
+  padding:5px 8px;
+  border-radius:20px;
+  font-size:10px;
+  font-weight:700;
+  white-space:nowrap;
+}
+
+.row{
+  display:grid;
+  grid-template-columns:115px 1fr;
+  gap:8px;
+  padding:7px 0;
+  border-bottom:1px solid #f3ebe4;
+  font-size:11px;
+  line-height:1.45;
+}
+
+.row b{
+  color:#8a7668;
+}
+
+.row:last-child{
+  border:0;
+}
+
+.coords{
+  font-family:monospace;
+  font-size:10px;
+  color:#a35312;
+}
+
+.pos{
+  display:inline-block;
+  padding:4px 7px;
+  background:#fff0df;
+  border-radius:6px;
+  color:#a84f0b;
+  font-weight:700;
+}
+
+.gps-btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:5px;
+  width:100%;
+  margin-top:10px;
+  padding:9px 10px;
+  border-radius:8px;
+  background:var(--green);
+  border:1px solid var(--green);
+  color:#fff;
+  font:700 10px Montserrat,Arial,sans-serif;
+  cursor:pointer;
+  text-decoration:none;
+}
+
+.gps-btn:hover{
+  background:var(--green-dark);
+  border-color:var(--green-dark);
+}
+
+.gps-btn.disabled{
+  background:#aaa;
+  border-color:#aaa;
+  cursor:not-allowed;
+}
+
+.loading{
+  padding:30px;
+  text-align:center;
+  color:var(--muted);
+}
+
+.empty{
+  padding:35px 20px;
+  text-align:center;
+  color:var(--muted);
+}
+
+.alert{
+  margin:18px;
+  padding:14px;
+  border-radius:10px;
+  background:#fff0ed;
+  border:1px solid #f1b7ae;
+  color:var(--danger);
+  font-size:12px;
+  line-height:1.6;
+}
+
+.ok{
+  color:var(--green);
+}
+
+.map-panel{
+  margin-top:18px;
+}
+
+.map-wrap{
+  padding:18px;
+}
+
+#map{
+  position:relative;
+  width:100%;
+  height:560px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  overflow:hidden;
+  background:#eee;
+  cursor:grab;
+  user-select:none;
+}
+
+#map.dragging{
+  cursor:grabbing;
+}
+
+#mapTiles,#mapMarkers{
+  position:absolute;
+  inset:0;
+  overflow:hidden;
+}
+
+#mapTiles{
+  z-index:1;
+  background:#eee;
+}
+
+#mapMarkers{
+  z-index:2;
+  pointer-events:none;
+}
+
+.map-tile{
+  position:absolute;
+  width:256px;
+  height:256px;
+  display:block;
+  pointer-events:none;
+}
+
+.map-marker{
+  position:absolute;
+  width:18px;
+  height:18px;
+  border-radius:50%;
+  border:3px solid #fff;
+  box-shadow:0 2px 7px #0007;
+  transform:translate(-50%,-50%);
+  pointer-events:auto;
+  cursor:pointer;
+}
+
+.map-marker:hover{
+  transform:translate(-50%,-50%) scale(1.25);
+  z-index:20;
+}
+
+.map-marker::after{
+  content:"";
+  position:absolute;
+  inset:-7px;
+  border-radius:50%;
+  border:2px solid currentColor;
+  opacity:.18;
+}
+
+.map-popup{
+  position:absolute;
+  z-index:50;
+  min-width:240px;
+  max-width:320px;
+  background:#fff;
+  border:1px solid #d9c6b7;
+  border-radius:10px;
+  padding:10px 12px;
+  box-shadow:0 8px 25px #0003;
+  font:500 11px Montserrat,Arial,sans-serif;
+  color:var(--dark);
+  pointer-events:auto;
+}
+
+.map-popup b{
+  display:block;
+  font-size:12px;
+  margin-bottom:4px;
+}
+
+.map-popup .close{
+  position:absolute;
+  right:7px;
+  top:4px;
+  border:0;
+  background:none;
+  color:#7b6a5d;
+  font-size:18px;
+  padding:0;
+  cursor:pointer;
+}
+
+#mapZoom{
+  position:absolute;
+  right:12px;
+  top:12px;
+  z-index:60;
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+}
+
+#mapZoom button{
+  width:36px;
+  height:36px;
+  padding:0;
+  border-radius:8px;
+  background:#fff;
+  color:var(--dark);
+  border:1px solid #d9c6b7;
+  box-shadow:0 2px 7px #0002;
+  font-size:20px;
+  line-height:1;
+}
+
+#mapZoom button:hover{
+  background:#fff3e8;
+}
+
+#mapStatus{
+  position:absolute;
+  left:12px;
+  bottom:12px;
+  z-index:60;
+  background:#fff;
+  opacity:.94;
+  border:1px solid #d9c6b7;
+  border-radius:8px;
+  padding:7px 10px;
+  font-size:10px;
+  color:#6d5c50;
+  box-shadow:0 2px 7px #0002;
+}
+
+.map-compass{
+  position:absolute;
+  left:12px;
+  top:12px;
+  z-index:60;
+  background:#fff;
+  opacity:.94;
+  border:1px solid #d9c6b7;
+  border-radius:8px;
+  padding:8px 10px;
+  font-size:11px;
+  font-weight:800;
+  color:#9b4c0d;
+  box-shadow:0 2px 7px #0002;
+}
+
+.map-note{
+  margin-top:9px;
+  font-size:11px;
+  color:var(--muted);
+}
+
+footer{
+  padding:20px 22px 30px;
+  text-align:center;
+  color:var(--muted);
+  font-size:10px;
+}
+
+@media(max-width:1100px){
+  .stats{grid-template-columns:repeat(3,1fr)}
+}
+
+@media(max-width:700px){
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .cards{grid-template-columns:1fr}
+  input{min-width:100%}
+  select{flex:1 1 140px}
+  #map{height:460px}
+}
+
+@media(max-width:480px){
+  .stats{grid-template-columns:1fr 1fr}
+  header{padding:22px 18px}
+  .toolbar,.content,.stats{padding-left:14px;padding-right:14px}
+}
+</style>
+</head>
+
 <body>
-<header><h1>Cadastro de Drenagem</h1><p>Consulta operacional de bocas de lobo e caixas por logradouro, posição, bairro e problemas.</p></header>
-<div class="toolbar">
-<input id="search" placeholder="Pesquisar rua, nº, bairro, ID, problema...">
-<select id="bairro"><option value="">Todos os bairros</option></select>
-<select id="tipo"><option value="">Todos os tipos</option></select>
-<select id="posicao"><option value="">Todas as posições</option></select>
-<select id="problema"><option value="">Todos os problemas</option></select>
-<button onclick="clearFilters()">Limpar filtros</button>
-</div>
-<div class="stats" id="stats"></div>
-<main class="content">
-<section class="panel"><div class="section-title">Resumo da consulta</div><div class="summary" id="summary"></div></section>
-<section class="panel" style="margin-top:18px"><div class="section-title">Registros encontrados</div><div class="cards" id="cards"></div></section>
-<section class="panel map-panel"><div class="section-title">Mapa das bocas de lobo e caixas</div><div class="map-wrap"><div id="map"><div id="mapTiles"></div><div id="mapMarkers"></div><div id="mapZoom"><button id="zoomIn">+</button><button id="zoomOut">−</button><button id="zoomFit">⌂</button></div><div class="map-compass">N ↑</div><div id="mapStatus">Carregando mapa...</div></div><div class="map-note">Mapa de ruas interativo. Os pontos usam as latitude/longitude do cadastro e têm cor por bairro. O sistema tenta um servidor público de mapas e possui alternativa automática.</div></div></section>
-</main>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-const SUPABASE_URL = "https://yuojaquqzlmmuvjqlohe.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_yEiFeQLdXCzzwtHAY8bfMQ_7ZFWGQTX";
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-let data=[];
-const $=id=>document.getElementById(id);
-const colors=["#e4572e","#f28e2b","#f6aa4b","#c94c13","#e76f24","#ffb35c","#b83b0e","#d97706","#ef8a17","#9f4a16","#f4a261","#cc5500"];
-let bairroColors={};
-let carregando=false;
 
-function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
-function v(r,k){return r[k]===null||r[k]===undefined?"":String(r[k]).trim()}
-function unique(k){return [...new Set(original.map(r=>v(r,k)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"pt-BR"))}
-function fill(id,a){
-  const el=$(id);
-  el.querySelectorAll("option:not(:first-child)").forEach(o=>o.remove());
-  a.forEach(x=>el.insertAdjacentHTML("beforeend","<option>"+esc(x)+"</option>"));
+<header>
+  <h1>Cadastro de Drenagem</h1>
+  <p>Consulta direta ao banco de dados — Bocas de Lobo e Caixas de Leão</p>
+</header>
+
+<div class="toolbar">
+  <input id="search" placeholder="Pesquisar rua, nº, bairro, ID, código ou problema...">
+
+  <select id="bairro">
+    <option value="">Todos os bairros</option>
+  </select>
+
+  <select id="tipo">
+    <option value="">Todos os tipos</option>
+  </select>
+
+  <select id="posicao">
+    <option value="">Todas as posições</option>
+  </select>
+
+  <select id="problema">
+    <option value="">Todos os problemas</option>
+  </select>
+
+  <button onclick="clearFilters()">Limpar filtros</button>
+  <button onclick="carregarSupabase()">↻ Atualizar banco</button>
+</div>
+
+<div class="stats" id="stats">
+  <div class="stat"><b>—</b><span>Registros</span></div>
+  <div class="stat"><b>—</b><span>Bocas de lobo</span></div>
+  <div class="stat"><b>—</b><span>Caixas de leão</span></div>
+  <div class="stat"><b>—</b><span>Logradouros</span></div>
+  <div class="stat"><b>—</b><span>Com localização</span></div>
+</div>
+
+<main class="content">
+
+  <section class="panel">
+    <div class="section-title">Resumo da consulta</div>
+    <div class="summary" id="summary">
+      <div class="loading">Carregando informações do Supabase...</div>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-top:18px">
+    <div class="section-title">Registros encontrados</div>
+    <div class="cards" id="cards">
+      <div class="loading">Consultando banco de dados...</div>
+    </div>
+  </section>
+
+  <section class="panel map-panel">
+    <div class="section-title">Mapa das bocas de lobo e caixas</div>
+    <div class="map-wrap">
+
+      <div id="map">
+        <div id="mapTiles"></div>
+        <div id="mapMarkers"></div>
+
+        <div id="mapZoom">
+          <button id="zoomIn">+</button>
+          <button id="zoomOut">−</button>
+          <button id="zoomFit">⌂</button>
+        </div>
+
+        <div class="map-compass">N ↑</div>
+        <div id="mapStatus">Aguardando dados...</div>
+      </div>
+
+      <div class="map-note">
+        Os pontos utilizam latitude e longitude cadastradas no Supabase.
+        Clique em um ponto para abrir os dados e visualizar diretamente as coordenadas no Google Maps.
+      </div>
+
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  Consulta operacional de drenagem • Dados carregados diretamente do Supabase
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+/* ============================================================
+   CONFIGURAÇÃO SUPABASE
+   ============================================================ */
+
+const SUPABASE_URL = "https://yuojaquqzlmmuvjqlohe.supabase.co";
+
+const SUPABASE_ANON_KEY =
+  "sb_publishable_yEiFeQLdXCzzwtHAY8bfMQ_7ZFWGQTX";
+
+const supabaseClient =
+  window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+
+/* ============================================================
+   ESTADO
+   ============================================================ */
+
+let original = [];
+let data = [];
+let carregando = false;
+
+const $ = id => document.getElementById(id);
+
+const colors = [
+  "#e4572e","#f28e2b","#f6aa4b","#c94c13",
+  "#e76f24","#ffb35c","#b83b0e","#d97706",
+  "#ef8a17","#9f4a16","#f4a261","#cc5500"
+];
+
+let bairroColors = {};
+
+
+/* ============================================================
+   FUNÇÕES GERAIS
+   ============================================================ */
+
+function esc(s){
+  return String(s ?? "").replace(
+    /[&<>"']/g,
+    m => ({
+      "&":"&amp;",
+      "<":"&lt;",
+      ">":"&gt;",
+      '"':"&quot;",
+      "'":"&#039;"
+    }[m])
+  );
 }
+
+function v(r,k){
+  return r[k] === null || r[k] === undefined
+    ? ""
+    : String(r[k]).trim();
+}
+
+function unique(k){
+  return [
+    ...new Set(
+      original
+        .map(r => v(r,k))
+        .filter(Boolean)
+    )
+  ].sort((a,b) => a.localeCompare(b,"pt-BR"));
+}
+
+function fill(id, values){
+  const el = $(id);
+
+  el.querySelectorAll("option:not(:first-child)")
+    .forEach(o => o.remove());
+
+  values.forEach(x => {
+    el.insertAdjacentHTML(
+      "beforeend",
+      "<option>" + esc(x) + "</option>"
+    );
+  });
+}
+
 function counts(arr,k){
-  let m={};
-  arr.forEach(r=>{let x=v(r,k)||"Não informado";m[x]=(m[x]||0)+1});
-  return m
+  const m = {};
+
+  arr.forEach(r => {
+    const x = v(r,k) || "Não informado";
+    m[x] = (m[x] || 0) + 1;
+  });
+
+  return m;
 }
+
+
+/* ============================================================
+   NORMALIZAÇÃO
+   ============================================================ */
 
 function normalizarRegistro(r){
-  let problemas=r.problemas;
-  if(Array.isArray(problemas)) problemas=problemas.join(" | ");
-  const criado=r.criado_em ? new Date(r.criado_em) : null;
+
+  let problemas = r.problemas;
+
+  if(Array.isArray(problemas)){
+    problemas = problemas.join(" | ");
+  }
+
+  const criado = r.criado_em
+    ? new Date(r.criado_em)
+    : null;
+
   return {
     ...r,
-    id:r.codigo || r.id || "",
-    data:criado && !isNaN(criado) ? criado.toLocaleDateString("pt-BR") : "",
-    hora:criado && !isNaN(criado) ? criado.toLocaleTimeString("pt-BR") : "",
-    problemas:problemas || "",
-    // Mantém aliases para compatibilidade com a interface/mapa.
-    lat_num:r.latitude,
-    lon_num:r.longitude
+
+    id: r.codigo || r.id || "",
+
+    data:
+      criado && !isNaN(criado)
+        ? criado.toLocaleDateString("pt-BR")
+        : "",
+
+    hora:
+      criado && !isNaN(criado)
+        ? criado.toLocaleTimeString("pt-BR")
+        : "",
+
+    problemas: problemas || "",
+
+    lat_num: r.latitude,
+    lon_num: r.longitude
   };
 }
 
+
+/* ============================================================
+   CONSULTA SUPABASE
+   ============================================================ */
+
 async function carregarSupabase(){
-  if(carregando)return;
-  carregando=true;
-  $("mapStatus").textContent="Conectando ao Supabase...";
-  $("cards").innerHTML='<div class="card"><b>⏳ Carregando dados do Supabase...</b><br><small>Consultando a tabela bocas_de_lobo.</small></div>';
+
+  if(carregando) return;
+
+  carregando = true;
+
+  $("mapStatus").textContent =
+    "Conectando ao Supabase...";
+
+  $("cards").innerHTML =
+    '<div class="loading">⏳ Carregando dados do banco...</div>';
+
   try{
-    let todos=[];
-    const pageSize=1000;
-    for(let from=0;;from+=pageSize){
-      const {data,error}=await supabaseClient
-        .from("bocas_de_lobo")
-        .select("id,codigo,tipo,logradouro,numero,bairro,posicao,problemas,observacoes,latitude,longitude,precisao_gps,numero_via_oficial,criado_em,atualizado_em")
-        .order("id",{ascending:true})
-        .range(from,from+pageSize-1);
-      if(error)throw error;
-      todos.push(...(data||[]));
-      if(!data || data.length<pageSize)break;
+
+    let todos = [];
+
+    const pageSize = 1000;
+
+    /*
+      O Supabase normalmente limita respostas grandes.
+      Por isso buscamos em páginas de 1.000 registros.
+    */
+
+    for(let from = 0;;from += pageSize){
+
+      const { data: page, error } =
+        await supabaseClient
+          .from("bocas_de_lobo")
+          .select(`
+            id,
+            codigo,
+            tipo,
+            logradouro,
+            numero,
+            bairro,
+            posicao,
+            problemas,
+            observacoes,
+            latitude,
+            longitude,
+            precisao_gps,
+            numero_via_oficial,
+            criado_em,
+            atualizado_em
+          `)
+          .order("id",{ascending:true})
+          .range(from,from + pageSize - 1);
+
+      if(error) throw error;
+
+      todos.push(...(page || []));
+
+      if(!page || page.length < pageSize){
+        break;
+      }
     }
-    original=todos.map(normalizarRegistro);
-    data=original.slice();
+
+    original = todos.map(normalizarRegistro);
+    data = original.slice();
+
     fill("bairro",unique("bairro"));
     fill("tipo",unique("tipo"));
     fill("posicao",unique("posicao"));
     fill("problema",unique("problemas"));
-    $("mapStatus").textContent=original.length+" registro(s) carregado(s) do Supabase";
+
+    $("mapStatus").textContent =
+      original.length +
+      " registro(s) carregado(s) do Supabase";
+
     render();
+
+    /*
+      Se vier zero registros, provavelmente é RLS.
+    */
+
+    if(original.length === 0){
+
+      $("summary").insertAdjacentHTML(
+        "afterbegin",
+        '<div class="alert">' +
+        '<b>O banco respondeu, mas não retornou registros.</b><br><br>' +
+        'Na configuração mostrada no Supabase, a tabela ' +
+        '<b>bocas_de_lobo</b> está com RLS ativado e sem política de SELECT. ' +
+        'Nesse caso, a chave pública do site não consegue ler os registros.' +
+        '<br><br>' +
+        'Crie uma política de leitura para <b>anon</b> no Supabase.' +
+        '</div>'
+      );
+    }
+
   }catch(error){
+
     console.error("Supabase:",error);
-    $("stats").innerHTML='<div class="stat"><b>ERRO</b><span>Supabase</span></div>';
-    $("summary").innerHTML='<h3>Não foi possível carregar os dados</h3><p>'+esc(error.message||String(error))+'</p><p><b>Verifique:</b> URL/chave do projeto, tabela <code>bocas_de_lobo</code> e a política RLS de SELECT para <code>anon</code>.</p><button onclick="carregarSupabase()">🔄 Tentar novamente</button>';
-    $("cards").innerHTML='<div class="card"><b>⚠️ Dados não carregados.</b><br><small>Abra o Console do navegador (F12) para ver o erro detalhado.</small></div>';
-    $("mapStatus").textContent="Erro ao carregar Supabase";
+
+    $("stats").innerHTML =
+      '<div class="stat"><b>ERRO</b><span>Supabase</span></div>';
+
+    $("summary").innerHTML =
+      '<div class="alert">' +
+      '<b>Não foi possível consultar o banco.</b><br><br>' +
+      esc(error.message || String(error)) +
+      '<br><br>' +
+      '<b>Verifique:</b><br>' +
+      '• URL/chave do projeto<br>' +
+      '• tabela bocas_de_lobo<br>' +
+      '• nome das colunas<br>' +
+      '• política RLS de SELECT para anon' +
+      '</div>';
+
+    $("cards").innerHTML =
+      '<div class="empty">⚠️ Dados não carregados.</div>';
+
+    $("mapStatus").textContent =
+      "Erro ao carregar Supabase";
+
   }finally{
-    carregando=false;
+
+    carregando = false;
   }
 }
+
+
+/* ============================================================
+   FILTROS
+   ============================================================ */
 
 function filtered(){
- let q=$("search").value.toLowerCase().trim();
- return original.filter(r=>
- (!q||["id","codigo","logradouro","numero","bairro","tipo","posicao","problemas","observacoes"].some(k=>v(r,k).toLowerCase().includes(q))) &&
- (!$("bairro").value||v(r,"bairro")===$("bairro").value)&&
- (!$("tipo").value||v(r,"tipo")===$("tipo").value)&&
- (!$("posicao").value||v(r,"posicao")===$("posicao").value)&&
- (!$("problema").value||v(r,"problemas").toLowerCase().includes($("problema").value.toLowerCase()))
- )
+
+  const q =
+    $("search").value
+      .toLowerCase()
+      .trim();
+
+  return original.filter(r =>
+
+    (
+      !q ||
+      [
+        "id",
+        "codigo",
+        "logradouro",
+        "numero",
+        "bairro",
+        "tipo",
+        "posicao",
+        "problemas",
+        "observacoes",
+        "numero_via_oficial"
+      ].some(
+        k => v(r,k)
+          .toLowerCase()
+          .includes(q)
+      )
+    )
+
+    &&
+
+    (
+      !$("bairro").value ||
+      v(r,"bairro") === $("bairro").value
+    )
+
+    &&
+
+    (
+      !$("tipo").value ||
+      v(r,"tipo") === $("tipo").value
+    )
+
+    &&
+
+    (
+      !$("posicao").value ||
+      v(r,"posicao") === $("posicao").value
+    )
+
+    &&
+
+    (
+      !$("problema").value ||
+      v(r,"problemas")
+        .toLowerCase()
+        .includes(
+          $("problema").value.toLowerCase()
+        )
+    )
+  );
 }
+
+
+/* ============================================================
+   RENDERIZAÇÃO
+   ============================================================ */
 
 function render(){
- data=filtered();
- const streets=counts(data,"logradouro"), probs=counts(data,"problemas"), pos=counts(data,"posicao");
- const boca=data.filter(r=>/boca/i.test(v(r,"tipo"))).length;
- const caixa=data.filter(r=>/caixa/i.test(v(r,"tipo"))).length;
- $("stats").innerHTML=[
- ["Registros",data.length],["Bocas de lobo",boca],["Caixas",caixa],
- ["Logradouros",Object.keys(streets).filter(x=>x!="Não informado").length],
- ["Com localização",data.filter(r=>gpsCoord(r)!=null).length]
- ].map(x=>'<div class="stat"><b>'+x[1]+'</b><span>'+x[0]+'</span></div>').join("");
 
- let streetRows=Object.entries(streets).sort((a,b)=>b[1]-a[1]);
- $("summary").innerHTML=
- '<h3>Quantidade por logradouro</h3>'+
- (streetRows.length?'<table>'+streetRows.map(x=>'<tr><td>'+esc(x[0])+'</td><td>'+x[1]+'</td></tr>').join("")+'</table>':'—')+
- '<h3 style="margin-top:20px">Posição na rua</h3><div class="badges">'+
- Object.entries(pos).sort((a,b)=>b[1]-a[1]).map(x=>'<span class="badge">'+esc(x[0])+': <b>'+x[1]+'</b></span>').join("")+
- '</div><h3 style="margin-top:20px">Problemas e contagens</h3><div class="badges">'+
- Object.entries(probs).sort((a,b)=>b[1]-a[1]).map(x=>'<span class="badge">'+esc(x[0])+': <b>'+x[1]+'</b></span>').join("")+
- '</div><p style="margin-top:18px;font-size:11px;color:var(--muted)">Fonte: Supabase • '+data.length+' registro(s) nesta consulta.</p>';
+  data = filtered();
 
- $("cards").innerHTML=data.map(r=>'<article class="card" data-id="'+esc(v(r,"id"))+'"><div class="card-head"><h3>'+
- esc(v(r,"id"))+' — '+esc(v(r,"logradouro"))+(v(r,"numero")?', nº '+esc(v(r,"numero")):'')+
- '</h3><span class="type">'+esc(v(r,"tipo")||"Cadastro")+'</span></div>'+
- '<div class="row"><b>Bairro</b><span>'+esc(v(r,"bairro")||"—")+'</span></div>'+
- '<div class="row"><b>Posição</b><span><span class="pos">'+esc(v(r,"posicao")||"Não informada")+'</span></span></div>'+
- '<div class="row"><b>Problema</b><span>'+esc(v(r,"problemas")||"Sem problema informado")+'</span></div>'+
- '<div class="row"><b>Observações</b><span>'+esc(v(r,"observacoes")||"—")+'</span></div>'+
- '<div class="row"><b>GPS</b><span class="coords">'+(gpsCoord(r)?gpsCoord(r).lat.toFixed(7)+', '+gpsCoord(r).lon.toFixed(7):"—")+'</span></div>'+
- (gpsCoord(r)?'<button class="gps-btn" onclick="abrirGPS(original.find(x=>v(x,&quot;id&quot;)===\''+esc(v(r,"id"))+'\'))">📍 Ir para este ponto no GPS</button>':
- '<button class="gps-btn disabled" disabled>📍 GPS indisponível</button>')+
- '</article>').join("")||'<div class="card">Nenhum registro encontrado.</div>';
+  const streets = counts(data,"logradouro");
+  const probs = counts(data,"problemas");
+  const pos = counts(data,"posicao");
 
- if(!mapReady){initMap();mapReady=true}else{renderMap();}
+  const boca =
+    data.filter(
+      r => /boca/i.test(v(r,"tipo"))
+    ).length;
+
+  const caixa =
+    data.filter(
+      r => /caixa/i.test(v(r,"tipo"))
+    ).length;
+
+  const comGps =
+    data.filter(
+      r => gpsCoord(r) !== null
+    ).length;
+
+  $("stats").innerHTML = [
+
+    ["Registros",data.length],
+
+    ["Bocas de lobo",boca],
+
+    ["Caixas de leão",caixa],
+
+    [
+      "Logradouros",
+      Object.keys(streets)
+        .filter(x => x !== "Não informado")
+        .length
+    ],
+
+    ["Com localização",comGps]
+
+  ].map(x =>
+    '<div class="stat">' +
+      '<b>' + x[1] + '</b>' +
+      '<span>' + x[0] + '</span>' +
+    '</div>'
+  ).join("");
+
+
+  /* Resumo */
+
+  const streetRows =
+    Object.entries(streets)
+      .sort((a,b) => b[1] - a[1]);
+
+  $("summary").innerHTML =
+
+    '<h3>Quantidade por logradouro</h3>' +
+
+    (
+      streetRows.length
+
+      ?
+
+      '<table>' +
+        streetRows.map(x =>
+          '<tr>' +
+            '<td>' + esc(x[0]) + '</td>' +
+            '<td>' + x[1] + '</td>' +
+          '</tr>'
+        ).join("") +
+      '</table>'
+
+      :
+
+      '<div class="empty">Nenhum registro encontrado.</div>'
+    )
+
+    +
+
+    '<h3 style="margin-top:20px">Posição na rua</h3>' +
+
+    '<div class="badges">' +
+
+      Object.entries(pos)
+        .sort((a,b) => b[1] - a[1])
+        .map(x =>
+          '<span class="badge">' +
+            esc(x[0]) +
+            ': <b>' + x[1] + '</b>' +
+          '</span>'
+        ).join("")
+
+    +
+
+    '</div>' +
+
+    '<h3 style="margin-top:20px">Problemas e contagens</h3>' +
+
+    '<div class="badges">' +
+
+      Object.entries(probs)
+        .sort((a,b) => b[1] - a[1])
+        .map(x =>
+          '<span class="badge">' +
+            esc(x[0]) +
+            ': <b>' + x[1] + '</b>' +
+          '</span>'
+        ).join("")
+
+    +
+
+    '</div>' +
+
+    '<p style="margin-top:18px;font-size:11px;color:var(--muted)">' +
+      'Fonte: Supabase • ' +
+      data.length +
+      ' registro(s) nesta consulta.' +
+    '</p>';
+
+
+  /* Cards */
+
+  $("cards").innerHTML =
+
+    data.map(r => {
+
+      const p = gpsCoord(r);
+
+      return (
+
+        '<article class="card" data-id="' +
+          esc(v(r,"id")) +
+        '">' +
+
+          '<div class="card-head">' +
+
+            '<h3>' +
+              esc(v(r,"id")) +
+              ' — ' +
+              esc(v(r,"logradouro")) +
+
+              (
+                v(r,"numero")
+                ? ', nº ' + esc(v(r,"numero"))
+                : ''
+              ) +
+
+            '</h3>' +
+
+            '<span class="type">' +
+              esc(v(r,"tipo") || "Cadastro") +
+            '</span>' +
+
+          '</div>' +
+
+          '<div class="row">' +
+            '<b>Código</b>' +
+            '<span>' +
+              esc(v(r,"codigo") || "—") +
+            '</span>' +
+          '</div>' +
+
+          '<div class="row">' +
+            '<b>Bairro</b>' +
+            '<span>' +
+              esc(v(r,"bairro") || "—") +
+            '</span>' +
+          '</div>' +
+
+          '<div class="row">' +
+            '<b>Posição</b>' +
+            '<span>' +
+              '<span class="pos">' +
+                esc(v(r,"posicao") || "Não informada") +
+              '</span>' +
+            '</span>' +
+          '</div>' +
+
+          '<div class="row">' +
+            '<b>Problema</b>' +
+            '<span>' +
+              esc(v(r,"problemas") || "Sem problema informado") +
+            '</span>' +
+          '</div>' +
+
+          '<div class="row">' +
+            '<b>Observações</b>' +
+            '<span>' +
+              esc(v(r,"observacoes") || "—") +
+            '</span>' +
+          '</div>' +
+
+          '<div class="row">' +
+            '<b>Via oficial</b>' +
+            '<span>' +
+              esc(v(r,"numero_via_oficial") || "—") +
+            '</span>' +
+          '</div>' +
+
+          '<div class="row">' +
+            '<b>GPS</b>' +
+            '<span class="coords">' +
+
+              (
+                p
+                ? p.lat.toFixed(7) +
+                  ', ' +
+                  p.lon.toFixed(7)
+                : '—'
+              ) +
+
+            '</span>' +
+          '</div>' +
+
+          (
+            p
+
+            ?
+
+            '<button class="gps-btn" ' +
+              'onclick="abrirGPSPorId(\'' +
+                esc(v(r,"id")) +
+              '\')">' +
+              '📍 ABRIR LOCAL PELAS COORDENADAS GPS' +
+            '</button>'
+
+            :
+
+            '<button class="gps-btn disabled" disabled>' +
+              '📍 GPS indisponível' +
+            '</button>'
+          ) +
+
+        '</article>'
+
+      );
+
+    }).join("")
+
+    ||
+
+    '<div class="empty">' +
+      'Nenhum registro encontrado para os filtros atuais.' +
+    '</div>';
+
+
+  if(!mapReady){
+    initMap();
+    mapReady = true;
+  }else{
+    fitMap();
+    renderMap();
+  }
 }
 
+
+/* ============================================================
+   GPS
+   ============================================================ */
+
 function gpsCoord(r){
+
   function norm(raw,kind){
-    let n=Number(raw);
-    if(!Number.isFinite(n))return null;
-    let a=Math.abs(n);
-    // Supabase normalmente receberá -23.67 / -46.34.
-    // Também aceita os números antigos sem ponto decimal.
-    if(kind==="lat" && a>90){
-      if(a>=1e8)return n/1e7;
-      if(a>=1e7)return n/1e7;
-      return n/1e6;
+
+    let n = Number(raw);
+
+    if(!Number.isFinite(n)) return null;
+
+    const a = Math.abs(n);
+
+    if(kind === "lat" && a > 90){
+
+      if(a >= 1e8) return n / 1e7;
+      if(a >= 1e7) return n / 1e7;
+
+      return n / 1e6;
     }
-    if(kind==="lon" && a>180){
-      if(a>=1e8)return n/1e7;
-      if(a>=1e7)return n/1e7;
-      return n/1e6;
+
+    if(kind === "lon" && a > 180){
+
+      if(a >= 1e8) return n / 1e7;
+      if(a >= 1e7) return n / 1e7;
+
+      return n / 1e6;
     }
+
     return n;
   }
-  let lat=norm(r.latitude,"lat"),lon=norm(r.longitude,"lon");
-  if(lat===null||lon===null||Math.abs(lat)>90||Math.abs(lon)>180)return null;
+
+  const lat = norm(r.latitude,"lat");
+  const lon = norm(r.longitude,"lon");
+
+  if(
+    lat === null ||
+    lon === null ||
+    Math.abs(lat) > 90 ||
+    Math.abs(lon) > 180
+  ){
+    return null;
+  }
+
   return {lat,lon};
 }
 
-function abrirGPS(r){
- const p=gpsCoord(r);
- if(!p){alert("Este registro não possui coordenadas GPS válidas.");return}
- const destino=encodeURIComponent(p.lat.toFixed(7)+","+p.lon.toFixed(7));
- const url="https://www.google.com/maps/dir/?api=1&destination="+destino+"&travelmode=driving";
- window.open(url,"_blank","noopener,noreferrer");
+function abrirGPSPorId(id){
+
+  const r =
+    original.find(
+      x => v(x,"id") === id
+    );
+
+  if(!r){
+    alert("Registro não encontrado.");
+    return;
+  }
+
+  abrirGPS(r);
 }
 
-let mapState={zoom:16,cx:0,cy:0,drag:false,sx:0,sy:0,ox:0,oy:0};let mapReady=false;
-const TILE=256;
-const MAP_SERVERS=[
- zxy=>"https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/"+zxy.z+"/"+zxy.y+"/"+zxy.x,
- zxy=>"https://tile.openstreetmap.org/"+zxy.z+"/"+zxy.x+"/"+zxy.y+".png"
-];
-let tileServerIndex=0;
-function lon2x(lon,z){return(lon+180)/360*Math.pow(2,z)}
-function lat2y(lat,z){let r=lat*Math.PI/180;return(1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*Math.pow(2,z)}
-function x2lon(x,z){return x/Math.pow(2,z)*360-180}
-function y2lat(y,z){let n=Math.PI-2*Math.PI*y/Math.pow(2,z);return 180/Math.PI*Math.atan(.5*(Math.exp(n)-Math.exp(-n)))}
-function validPoints(){return data.map((r,i)=>{let p=gpsCoord(r);return p?{r,i,...p}:null}).filter(Boolean)}
-function fitMap(){
- let pts=validPoints();if(!pts.length)return;
- let lat=pts.reduce((s,p)=>s+p.lat,0)/pts.length,lon=pts.reduce((s,p)=>s+p.lon,0)/pts.length;
- mapState.zoom=16;mapState.cx=lon2x(lon,mapState.zoom);mapState.cy=lat2y(lat,mapState.zoom);
-}
-function renderMap(){
- const map=$("map"),tiles=$("mapTiles"),markers=$("mapMarkers");if(!map||!tiles||!markers)return;
- tiles.innerHTML="";markers.innerHTML="";
- const pts=validPoints();
- if(!pts.length){$("mapStatus").textContent="Nenhum registro com coordenadas válidas.";return}
- const w=map.clientWidth,h=map.clientHeight,z=mapState.zoom,world=Math.pow(2,z);
- const left=mapState.cx*TILE-w/2,top=mapState.cy*TILE-h/2,baseX=Math.floor(mapState.cx),baseY=Math.floor(mapState.cy);
- const cols=Math.ceil(w/TILE)+3,rows=Math.ceil(h/TILE)+3;
- for(let ty=baseY-Math.floor(rows/2)-1;ty<=baseY+Math.floor(rows/2)+1;ty++){
-  for(let tx=baseX-Math.floor(cols/2)-1;tx<=baseX+Math.floor(cols/2)+1;tx++){
-   let xx=((tx%world)+world)%world,yy=ty;if(yy<0||yy>=world)continue;
-   let img=document.createElement("img");img.className="map-tile";img.draggable=false;img.alt="";
-   img.style.left=(tx*TILE-left)+"px";img.style.top=(ty*TILE-top)+"px";
-   img.src=MAP_SERVERS[tileServerIndex]({z,y:yy,x:xx});
-   img.onerror=function(){if(tileServerIndex<MAP_SERVERS.length-1){tileServerIndex++;renderMap()}};
-   tiles.appendChild(img);
+function abrirGPS(r){
+
+  const p = gpsCoord(r);
+
+  if(!p){
+
+    alert(
+      "Este registro não possui coordenadas GPS válidas."
+    );
+
+    return;
   }
- }
- let bs=[...new Set(pts.map(p=>v(p.r,"bairro")).filter(Boolean))].sort();
- bs.forEach((b,i)=>bairroColors[b]=colors[i%colors.length]);
- pts.forEach(p=>{
-  let px=lon2x(p.lon,z)*TILE-left,py=lat2y(p.lat,z)*TILE-top;
-  if(px<-30||py<-30||px>w+30||py>h+30)return;
-  let b=v(p.r,"bairro")||"Sem bairro",c=bairroColors[b]||"#777",m=document.createElement("div");
-  m.className="map-marker";m.style.left=px+"px";m.style.top=py+"px";m.style.background=c;m.style.color=c;
-  m.title=v(p.r,"logradouro")+" • "+v(p.r,"tipo")+" • "+b;
-  m.onclick=e=>{
-   e.stopPropagation();document.querySelectorAll(".map-popup").forEach(x=>x.remove());
-   let pop=document.createElement("div");pop.className="map-popup";
-   pop.style.left=Math.min(Math.max(px+12,8),w-325)+"px";pop.style.top=Math.min(Math.max(py-95,8),h-155)+"px";
-   pop.innerHTML='<button class="close">×</button><b>'+esc(v(p.r,"logradouro"))+', '+esc(v(p.r,"numero")||"s/n")+'</b>'+
-    '<div>'+esc(v(p.r,"tipo"))+' • '+esc(v(p.r,"posicao")||"posição não informada")+'</div>'+
-    '<div><strong>Bairro:</strong> '+esc(b)+'</div><div><strong>ID:</strong> '+esc(v(p.r,"id"))+'</div>'+
-    '<div class="coords">'+p.lat.toFixed(7)+', '+p.lon.toFixed(7)+'</div>'+
-    '<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">'+
-    '<button class="gps-btn" style="margin-top:0" onclick="abrirGPS(original.find(x=>v(x,&quot;id&quot;)===\''+esc(v(p.r,"id"))+'\'))">📍 Ir para este ponto no GPS</button>'+
-    '<button class="go-card" style="padding:8px 10px;font-size:10px">Abrir cadastro</button></div>';
-   pop.querySelector(".close").onclick=()=>pop.remove();
-   pop.querySelector(".go-card").onclick=()=>{pop.remove();let card=[...document.querySelectorAll(".card")].find(c=>c.getAttribute("data-id")===v(p.r,"id"));if(card)card.scrollIntoView({behavior:"smooth",block:"center"})};
-   map.appendChild(pop);
-  };
-  markers.appendChild(m);
- });
- $("mapStatus").textContent=pts.length+" ponto(s) • zoom "+z+" • cor por bairro";
+
+  const destino =
+    encodeURIComponent(
+      p.lat.toFixed(7) +
+      "," +
+      p.lon.toFixed(7)
+    );
+
+  /*
+    IMPORTANTE:
+    Aqui NÃO usamos /maps/dir/.
+    Isso evita transformar o botão em "rota da minha localização
+    até o ponto".
+
+    O Google Maps recebe diretamente as coordenadas cadastradas
+    no banco e abre o próprio ponto no mapa.
+  */
+  const url =
+    "https://www.google.com/maps/search/?api=1" +
+    "&query=" +
+    destino;
+
+  window.open(
+    url,
+    "_blank",
+    "noopener,noreferrer"
+  );
 }
+
+
+/* ============================================================
+   MAPA
+   ============================================================ */
+
+let mapState = {
+  zoom:16,
+  cx:0,
+  cy:0,
+  drag:false,
+  sx:0,
+  sy:0,
+  ox:0,
+  oy:0
+};
+
+let mapReady = false;
+
+const TILE = 256;
+
+const MAP_SERVERS = [
+
+  zxy =>
+    "https://server.arcgisonline.com/ArcGIS/rest/services/" +
+    "World_Street_Map/MapServer/tile/" +
+    zxy.z + "/" +
+    zxy.y + "/" +
+    zxy.x,
+
+  zxy =>
+    "https://tile.openstreetmap.org/" +
+    zxy.z + "/" +
+    zxy.x + "/" +
+    zxy.y +
+    ".png"
+];
+
+let tileServerIndex = 0;
+
+function lon2x(lon,z){
+
+  return (
+    (lon + 180) /
+    360 *
+    Math.pow(2,z)
+  );
+}
+
+function lat2y(lat,z){
+
+  const r = lat * Math.PI / 180;
+
+  return (
+    1 -
+    Math.log(
+      Math.tan(r) +
+      1 / Math.cos(r)
+    ) / Math.PI
+  ) / 2 *
+  Math.pow(2,z);
+}
+
+function x2lon(x,z){
+
+  return (
+    x /
+    Math.pow(2,z) *
+    360 -
+    180
+  );
+}
+
+function y2lat(y,z){
+
+  const n =
+    Math.PI -
+    2 *
+    Math.PI *
+    y /
+    Math.pow(2,z);
+
+  return (
+    180 /
+    Math.PI *
+    Math.atan(
+      .5 *
+      (
+        Math.exp(n) -
+        Math.exp(-n)
+      )
+    )
+  );
+}
+
+function validPoints(){
+
+  return data
+    .map((r,i) => {
+
+      const p = gpsCoord(r);
+
+      return p
+        ? {r,i,...p}
+        : null;
+
+    })
+    .filter(Boolean);
+}
+
+function fitMap(){
+
+  const pts = validPoints();
+
+  if(!pts.length) return;
+
+  const lat =
+    pts.reduce(
+      (s,p) => s + p.lat,
+      0
+    ) / pts.length;
+
+  const lon =
+    pts.reduce(
+      (s,p) => s + p.lon,
+      0
+    ) / pts.length;
+
+  mapState.zoom = 16;
+
+  mapState.cx =
+    lon2x(lon,mapState.zoom);
+
+  mapState.cy =
+    lat2y(lat,mapState.zoom);
+}
+
+function renderMap(){
+
+  const map = $("map");
+  const tiles = $("mapTiles");
+  const markers = $("mapMarkers");
+
+  if(!map || !tiles || !markers) return;
+
+  tiles.innerHTML = "";
+  markers.innerHTML = "";
+
+  document
+    .querySelectorAll(".map-popup")
+    .forEach(x => x.remove());
+
+  const pts = validPoints();
+
+  if(!pts.length){
+
+    $("mapStatus").textContent =
+      "Nenhum registro com coordenadas válidas.";
+
+    return;
+  }
+
+  const w = map.clientWidth;
+  const h = map.clientHeight;
+  const z = mapState.zoom;
+  const world = Math.pow(2,z);
+
+  const left =
+    mapState.cx * TILE -
+    w / 2;
+
+  const top =
+    mapState.cy * TILE -
+    h / 2;
+
+  const baseX =
+    Math.floor(mapState.cx);
+
+  const baseY =
+    Math.floor(mapState.cy);
+
+  const cols =
+    Math.ceil(w / TILE) + 3;
+
+  const rows =
+    Math.ceil(h / TILE) + 3;
+
+  for(
+    let ty =
+      baseY -
+      Math.floor(rows / 2) -
+      1;
+
+    ty <=
+      baseY +
+      Math.floor(rows / 2) +
+      1;
+
+    ty++
+  ){
+
+    for(
+      let tx =
+        baseX -
+        Math.floor(cols / 2) -
+        1;
+
+      tx <=
+        baseX +
+        Math.floor(cols / 2) +
+        1;
+
+      tx++
+    ){
+
+      const xx =
+        ((tx % world) + world) % world;
+
+      const yy = ty;
+
+      if(
+        yy < 0 ||
+        yy >= world
+      ) continue;
+
+      const img =
+        document.createElement("img");
+
+      img.className = "map-tile";
+      img.draggable = false;
+      img.alt = "";
+
+      img.style.left =
+        (tx * TILE - left) + "px";
+
+      img.style.top =
+        (ty * TILE - top) + "px";
+
+      img.src =
+        MAP_SERVERS[tileServerIndex]({
+          z,
+          y:yy,
+          x:xx
+        });
+
+      img.onerror = function(){
+
+        if(
+          tileServerIndex <
+          MAP_SERVERS.length - 1
+        ){
+
+          tileServerIndex++;
+
+          renderMap();
+        }
+      };
+
+      tiles.appendChild(img);
+    }
+  }
+
+
+  const bs =
+    [
+      ...new Set(
+        pts
+          .map(p => v(p.r,"bairro"))
+          .filter(Boolean)
+      )
+    ].sort();
+
+  bs.forEach((b,i) => {
+
+    bairroColors[b] =
+      colors[
+        i % colors.length
+      ];
+
+  });
+
+
+  pts.forEach(p => {
+
+    const px =
+      lon2x(p.lon,z) *
+      TILE -
+      left;
+
+    const py =
+      lat2y(p.lat,z) *
+      TILE -
+      top;
+
+    if(
+      px < -30 ||
+      py < -30 ||
+      px > w + 30 ||
+      py > h + 30
+    ) return;
+
+    const b =
+      v(p.r,"bairro") ||
+      "Sem bairro";
+
+    const c =
+      bairroColors[b] ||
+      "#777";
+
+    const m =
+      document.createElement("div");
+
+    m.className = "map-marker";
+
+    m.style.left =
+      px + "px";
+
+    m.style.top =
+      py + "px";
+
+    m.style.background = c;
+    m.style.color = c;
+
+    m.title =
+      v(p.r,"logradouro") +
+      " • " +
+      v(p.r,"tipo") +
+      " • " +
+      b;
+
+    m.onclick = e => {
+
+      e.stopPropagation();
+
+      document
+        .querySelectorAll(".map-popup")
+        .forEach(x => x.remove());
+
+      const pop =
+        document.createElement("div");
+
+      pop.className =
+        "map-popup";
+
+      pop.style.left =
+        Math.min(
+          Math.max(px + 12,8),
+          w - 325
+        ) + "px";
+
+      pop.style.top =
+        Math.min(
+          Math.max(py - 95,8),
+          h - 155
+        ) + "px";
+
+      pop.innerHTML =
+
+        '<button class="close">×</button>' +
+
+        '<b>' +
+          esc(v(p.r,"logradouro")) +
+          ', ' +
+          esc(v(p.r,"numero") || "s/n") +
+        '</b>' +
+
+        '<div>' +
+          esc(v(p.r,"tipo")) +
+          ' • ' +
+          esc(
+            v(p.r,"posicao") ||
+            "posição não informada"
+          ) +
+        '</div>' +
+
+        '<div>' +
+          '<strong>Bairro:</strong> ' +
+          esc(b) +
+        '</div>' +
+
+        '<div>' +
+          '<strong>Código:</strong> ' +
+          esc(v(p.r,"codigo") || "—") +
+        '</div>' +
+
+        '<div>' +
+          '<strong>Problema:</strong> ' +
+          esc(
+            v(p.r,"problemas") ||
+            "Não informado"
+          ) +
+        '</div>' +
+
+        '<div class="coords">' +
+          p.lat.toFixed(7) +
+          ', ' +
+          p.lon.toFixed(7) +
+        '</div>' +
+
+        '<button class="gps-btn" ' +
+          'style="margin-top:8px" ' +
+          'onclick="abrirGPSPorId(\'' +
+            esc(v(p.r,"id")) +
+          '\')">' +
+          '📍 Abrir local pelas coordenadas GPS' +
+        '</button>';
+
+
+      pop
+        .querySelector(".close")
+        .onclick = () => pop.remove();
+
+      map.appendChild(pop);
+    };
+
+    markers.appendChild(m);
+  });
+
+  $("mapStatus").textContent =
+    pts.length +
+    " ponto(s) • zoom " +
+    z;
+}
+
 function zoomMap(delta){
- let old=mapState.zoom,newz=Math.max(13,Math.min(19,old+delta));if(newz===old)return;
- let lon=x2lon(mapState.cx,old),lat=y2lat(mapState.cy,old);
- mapState.zoom=newz;mapState.cx=lon2x(lon,newz);mapState.cy=lat2y(lat,newz);renderMap();
+
+  const old =
+    mapState.zoom;
+
+  const newz =
+    Math.max(
+      13,
+      Math.min(
+        19,
+        old + delta
+      )
+    );
+
+  if(newz === old) return;
+
+  const lon =
+    x2lon(
+      mapState.cx,
+      old
+    );
+
+  const lat =
+    y2lat(
+      mapState.cy,
+      old
+    );
+
+  mapState.zoom = newz;
+
+  mapState.cx =
+    lon2x(
+      lon,
+      newz
+    );
+
+  mapState.cy =
+    lat2y(
+      lat,
+      newz
+    );
+
+  renderMap();
 }
+
 function initMap(){
- fitMap();renderMap();
- $("zoomIn").onclick=()=>zoomMap(1);$("zoomOut").onclick=()=>zoomMap(-1);$("zoomFit").onclick=()=>{fitMap();renderMap()};
- const map=$("map");
- map.addEventListener("mousedown",e=>{if(e.target.closest(".map-marker,.map-popup,#mapZoom"))return;mapState.drag=true;mapState.sx=e.clientX;mapState.sy=e.clientY;mapState.ox=mapState.cx;mapState.oy=mapState.cy;map.classList.add("dragging")});
- window.addEventListener("mousemove",e=>{if(!mapState.drag)return;mapState.cx=mapState.ox-(e.clientX-mapState.sx)/TILE;mapState.cy=mapState.oy-(e.clientY-mapState.sy)/TILE;renderMap()});
- window.addEventListener("mouseup",()=>{mapState.drag=false;map.classList.remove("dragging")});
- map.addEventListener("wheel",e=>{e.preventDefault();zoomMap(e.deltaY<0?1:-1)},{passive:false});
- map.addEventListener("dblclick",e=>{e.preventDefault();zoomMap(1)});
- map.addEventListener("click",e=>{if(e.target===map)document.querySelectorAll(".map-popup").forEach(x=>x.remove())});
- window.addEventListener("resize",renderMap);
+
+  fitMap();
+  renderMap();
+
+  $("zoomIn").onclick =
+    () => zoomMap(1);
+
+  $("zoomOut").onclick =
+    () => zoomMap(-1);
+
+  $("zoomFit").onclick = () => {
+
+    fitMap();
+    renderMap();
+
+  };
+
+  const map = $("map");
+
+  map.addEventListener(
+    "mousedown",
+    e => {
+
+      if(
+        e.target.closest(
+          ".map-marker,.map-popup,#mapZoom"
+        )
+      ) return;
+
+      mapState.drag = true;
+
+      mapState.sx =
+        e.clientX;
+
+      mapState.sy =
+        e.clientY;
+
+      mapState.ox =
+        mapState.cx;
+
+      mapState.oy =
+        mapState.cy;
+
+      map.classList.add(
+        "dragging"
+      );
+    }
+  );
+
+  window.addEventListener(
+    "mousemove",
+    e => {
+
+      if(!mapState.drag) return;
+
+      mapState.cx =
+        mapState.ox -
+        (
+          e.clientX -
+          mapState.sx
+        ) / TILE;
+
+      mapState.cy =
+        mapState.oy -
+        (
+          e.clientY -
+          mapState.sy
+        ) / TILE;
+
+      renderMap();
+    }
+  );
+
+  window.addEventListener(
+    "mouseup",
+    () => {
+
+      mapState.drag = false;
+
+      map.classList.remove(
+        "dragging"
+      );
+
+    }
+  );
+
+  map.addEventListener(
+    "wheel",
+    e => {
+
+      e.preventDefault();
+
+      zoomMap(
+        e.deltaY < 0
+          ? 1
+          : -1
+      );
+
+    },
+    {passive:false}
+  );
+
+  map.addEventListener(
+    "dblclick",
+    e => {
+
+      e.preventDefault();
+
+      zoomMap(1);
+
+    }
+  );
+
+  map.addEventListener(
+    "click",
+    e => {
+
+      if(e.target === map){
+
+        document
+          .querySelectorAll(".map-popup")
+          .forEach(
+            x => x.remove()
+          );
+      }
+    }
+  );
+
+  window.addEventListener(
+    "resize",
+    renderMap
+  );
 }
-function clearFilters(){["search","bairro","tipo","posicao","problema"].forEach(id=>$(id).value="");render()}
+
+
+/* ============================================================
+   FILTROS / INICIALIZAÇÃO
+   ============================================================ */
+
+function clearFilters(){
+
+  [
+    "search",
+    "bairro",
+    "tipo",
+    "posicao",
+    "problema"
+  ].forEach(
+    id => $(id).value = ""
+  );
+
+  render();
+}
+
 function init(){
- document.querySelectorAll("select,#search").forEach(x=>x.addEventListener("input",render));
- carregarSupabase();
+
+  document
+    .querySelectorAll(
+      "select,#search"
+    )
+    .forEach(
+      x => x.addEventListener(
+        "input",
+        render
+      )
+    );
+
+  carregarSupabase();
 }
-window.addEventListener("load",init);
-</script></body></html>
+
+window.addEventListener(
+  "load",
+  init
+);
+</script>
+
+</body>
+</html>
